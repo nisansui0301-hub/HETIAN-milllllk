@@ -272,7 +272,13 @@
         .map-3d-world {
             width: 820px;
             height: 540px;
-            position: relative;
+            flex-shrink: 0;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-left: -410px;
+            margin-top: -270px;
+            transform-origin: center center;
             transform-style: preserve-3d;
             transition: transform 0.12s ease-out;
             will-change: transform;
@@ -1103,7 +1109,7 @@
                     <!-- 3D World Ground Plane -->
                     <div id="map-3d-world" class="map-3d-world smooth-cam">
                         <!-- Terrain Base SVG: Perimeter Wall, 300-mu Forage Fields, Roads, Rippling Ponds & Glowing Underground Milk Pipe -->
-                        <svg viewBox="0 0 820 540" class="w-full h-full block pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 820 540" preserveAspectRatio="none" class="w-full h-full block pointer-events-none" xmlns="http://www.w3.org/2000/svg">
                             <!-- Outer 300-mu Forage Farmland -->
                             <rect x="0" y="0" width="820" height="540" rx="22" fill="#DCEBD2" stroke="#362B24" stroke-width="3"/>
                             <!-- Crop Field Rows Left & Bottom -->
@@ -1140,7 +1146,7 @@
                         </svg>
 
                         <!-- Upright 3D Yanshan Mountain Range Backdrop on North Horizon -->
-                        <div style="position:absolute; left:10px; top:4px; width:800px; height:120px; transform-origin: bottom center; transform: rotateX(-90deg); pointer-events:none;">
+                        <div style="position:absolute; left:10px; top:-34px; width:800px; height:110px; transform-origin: bottom center; transform: rotateX(-90deg); pointer-events:none;">
                             <svg viewBox="0 0 800 120" class="w-full h-full">
                                 <path d="M 0 120 L 95 48 L 175 78 L 265 18 L 345 64 L 415 8 L 505 72 L 590 38 L 690 82 L 800 42 L 800 120 Z" fill="#5D7563" stroke="#362B24" stroke-width="2.5" stroke-linejoin="round"/>
                                 <path d="M 265 18 L 295 58 L 245 64 Z" fill="#89A38F"/>
@@ -2312,7 +2318,7 @@
             }
 
             if (viewId === 'map') {
-                updateCameraTransform();
+                setTimeout(updateCameraTransform, 30);
             }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2695,7 +2701,6 @@
                 const h = b.h;
 
                 if (b.type === 'silos') {
-                    // Twin 3D Cylindrical Grain Silos + Feed Warehouse
                     structureHTML = `
                         <div class="bldg-face" style="inset:0; background:${b.wallColor}; transform:translateZ(2px);"></div>
                         <div class="bldg-face" style="left:0; bottom:0; width:100%; height:${h * 0.45}px; background:#CBD5E1; transform-origin:bottom; transform:rotateX(-90deg);"></div>
@@ -2705,19 +2710,16 @@
                         <div class="silo-drum" style="left:52px; top:14px; width:32px; height:32px; background:${b.roofColor}; transform:translateZ(${h}px);"></div>
                     `;
                 } else if (b.type === 'dome') {
-                    // Black-Membrane Biogas Dome
                     structureHTML = `
                         <div class="bldg-face" style="inset:2px; border-radius:18px; background:#1E293B; transform:translateZ(${h * 0.55}px);"></div>
                         <div class="bldg-face" style="inset:10px; border-radius:50%; background:#334155; transform:translateZ(${h}px);"></div>
                     `;
                 } else if (b.type === 'pond') {
-                    // Stepped Blue Water / Oxidation Pond Basin
                     structureHTML = `
                         <div class="bldg-face" style="inset:0; border-radius:8px; background:#7DD3FC; transform:translateZ(${h}px);"></div>
                         <div class="bldg-face" style="left:0; bottom:0; width:100%; height:${h}px; background:#0284C7; transform-origin:bottom; transform:rotateX(-90deg);"></div>
                     `;
                 } else if (b.type === 'rotary') {
-                    // Glass Skylight Rotary Milking Parlor with Circular Turntable Core
                     structureHTML = `
                         <div class="bldg-face" style="left:0; bottom:0; width:100%; height:${h}px; background:${b.wallColor}; transform-origin:bottom; transform:rotateX(-90deg);"></div>
                         <div class="bldg-face" style="right:0; top:0; width:${h}px; height:100%; background:#BAE6FD; transform-origin:right; transform:rotateY(90deg);"></div>
@@ -2725,7 +2727,6 @@
                         <div class="silo-drum" style="left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px; background:#FFFFFF; transform:translateZ(${h + 5}px);"></div>
                     `;
                 } else {
-                    // Extruded 3D Barn / Reception / Plant with Pitched Gable Ridge
                     const ridgeH = Math.round(h * 0.36);
                     structureHTML = `
                         <div class="bldg-face" style="left:0; bottom:0; width:100%; height:${h}px; background:${b.wallColor}; transform-origin:bottom; transform:rotateX(-90deg);"></div>
@@ -2736,7 +2737,6 @@
                     `;
                 }
 
-                // Upright Reverse-Oriented Billboard Badge (Always Faces Viewer!)
                 const billboardHTML = `
                     <div class="bldg-billboard" style="transform: translateZ(${h + 14}px);">
                         <div class="bldg-billboard-card bg-cream/95 px-2 py-1 rounded-xl border-2 border-ink shadow-[2px_3px_0_#362B24] flex items-center gap-1">
@@ -2755,15 +2755,18 @@
 
         function updateCameraTransform() {
             const world = document.getElementById('map-3d-world');
+            const vp = document.getElementById('map-3d-viewport');
             if (!world) return;
-            world.style.transform = `scale(${camZoom}) rotateX(${camRx}deg) rotateZ(${camRz}deg)`;
+            const vpWidth = vp && vp.clientWidth > 0 ? vp.clientWidth : 740;
+            const fitRatio = Math.min(1, Math.max(0.55, (vpWidth - 16) / 760));
+            const effectiveScale = +(camZoom * fitRatio).toFixed(3);
+            world.style.transform = `scale(${effectiveScale}) rotateX(${camRx}deg) rotateZ(${camRz}deg)`;
 
             const readout = document.getElementById('cam-angle-readout');
             if (readout) {
                 readout.textContent = `俯仰 ${Math.round(camRx)}° / 旋转 ${Math.round(camRz)}°`;
             }
 
-            // Counter-rotate billboards so 3D icons & labels always face upright toward the user
             document.querySelectorAll('.bldg-billboard').forEach(bb => {
                 const zMatch = bb.style.transform.match(/translateZ\(([^)]+)\)/);
                 const zVal = zMatch ? zMatch[1] : '28px';
@@ -2782,134 +2785,9 @@
         }
 
         function adjustCameraZoom(delta) {
-            const world = document.getElementById('map-3d-world');
-            if (world) world.classList.add('smooth-cam');
-            camZoom = Math.min(1.35, Math.max(0.65, +(camZoom + delta).toFixed(2)));
+            camZoom = Math.min(1.45, Math.max(0.65, +(camZoom + delta).toFixed(2)));
             updateCameraTransform();
-            playTone(580, 'sine');
-        }
-
-        function switchMapDisplayMode(mode) {
-            currentMapMode = mode;
-            const world = document.getElementById('map-3d-world');
-            const btn3d = document.getElementById('btn-view-3d');
-            const btnIcons = document.getElementById('btn-view-icons');
-
-            if (world) {
-                world.classList.toggle('mode-icons-only', mode === 'icons');
-            }
-            if (btn3d && btnIcons) {
-                btn3d.classList.toggle('bg-hetianBlue', mode === '3d');
-                btn3d.classList.toggle('text-milkWhite', mode === '3d');
-                btn3d.classList.toggle('bg-oat', mode !== '3d');
-                btn3d.classList.toggle('text-ink', mode !== '3d');
-
-                btnIcons.classList.toggle('bg-hetianBlue', mode === 'icons');
-                btnIcons.classList.toggle('text-milkWhite', mode === 'icons');
-                btnIcons.classList.toggle('bg-oat', mode !== 'icons');
-                btnIcons.classList.toggle('text-ink', mode !== 'icons');
-            }
-            if (mode === 'icons') {
-                setCameraPreset(44, -14, 0.92);
-            } else {
-                setCameraPreset(52, -26, 0.90);
-            }
-        }
-
-        function filterMapZone(zone) {
-            document.querySelectorAll('.zone-filter-btn').forEach(btn => {
-                const active = btn.dataset.zone === zone;
-                btn.classList.toggle('bg-ink', active);
-                btn.classList.toggle('text-milkWhite', active);
-                btn.classList.toggle('bg-oat', !active);
-                btn.classList.toggle('text-ink', !active);
-            });
-
-            document.querySelectorAll('.bldg-3d').forEach(el => {
-                const match = zone === 'all' || el.dataset.zone === zone;
-                el.classList.toggle('is-dimmed', !match);
-            });
-            playTone(600, 'triangle');
-        }
-
-        function renderTMRDonutHTML() {
-            let cumulative = 0;
-            const gradientStops = TMR_INGREDIENTS.map(item => {
-                const start = cumulative;
-                cumulative += item.pct;
-                return `${item.color} ${start}% ${cumulative}%`;
-            }).join(', ');
-
-            const legendHTML = TMR_INGREDIENTS.map(item => `
-                <div class="flex items-center justify-between text-[10.5px] font-bold">
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-sm border border-ink shrink-0" style="background:${item.color}"></span>
-                        <span>${item.name}</span>
-                    </span>
-                    <span class="text-hetianBlue">${item.pct}%</span>
-                </div>
-            `).join('');
-
-            return `
-                <div class="flex items-center justify-between border-b border-dashed border-ink/25 pb-1.5">
-                    <span class="font-display text-sm text-pastureDark">🥗 实拍同款：TMR 10种日粮黄金配比</span>
-                    <span class="text-[10px] font-bold bg-wheat px-2 py-0.5 rounded border border-ink">80元/头/天</span>
-                </div>
-                <div class="grid grid-cols-12 gap-3 items-center pt-1">
-                    <div class="col-span-5 flex items-center justify-center">
-                        <div class="w-24 h-24 rounded-full border-2 border-ink flex items-center justify-center relative" style="background: conic-gradient(${gradientStops});">
-                            <div class="w-11 h-11 rounded-full bg-cream border-2 border-ink flex items-center justify-center text-[10px] font-black text-ink">
-                                TMR
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-span-7 space-y-1">
-                        ${legendHTML}
-                    </div>
-                </div>
-            `;
-        }
-
-        function select3DBuilding(id) {
-            selectedBldgId = id;
-            const b = BUILDINGS_3D.find(item => item.id === id) || BUILDINGS_3D[0];
-
-            document.querySelectorAll('.bldg-3d').forEach(el => {
-                el.classList.toggle('is-selected', el.dataset.id === id);
-            });
-
-            document.getElementById('insp-zone-badge').textContent = b.zoneLabel;
-            document.getElementById('insp-tag').textContent = b.tag;
-            document.getElementById('insp-icon').textContent = b.icon;
-            document.getElementById('insp-title').textContent = b.name;
-            document.getElementById('insp-subtitle').textContent = b.subtitle;
-
-            document.getElementById('insp-metrics').innerHTML = b.metrics.map(m => `
-                <div class="bg-cream p-2.5 rounded-xl border-2 border-ink">
-                    <strong class="font-display text-base sm:text-lg ${m.color} block leading-tight">${m.val}</strong>
-                    <span class="text-[10px] font-bold text-inkLight block mt-0.5">${m.label}</span>
-                </div>
-            `).join('');
-
-            const visualBody = document.getElementById('insp-visual-body');
-            if (b.isTMR) {
-                visualBody.innerHTML = renderTMRDonutHTML();
-            } else {
-                visualBody.innerHTML = (b.bars || []).map(bar => `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span>${bar.name}</span>
-                            <span class="text-pastureDark">${bar.pct}%</span>
-                        </div>
-                        <div class="w-full h-3 bg-oat rounded-full border border-ink overflow-hidden">
-                            <div class="h-full ${bar.color}" style="width:${bar.pct}%"></div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            document.getElementById('insp-trivia').textContent = b.trivia;
-            playTone(640, 'triangle');
+            playTone(560, 'sine');
         }
 
         function init3DViewportGestures() {
@@ -2931,9 +2809,8 @@
                 const dy = e.clientY - dragStartY;
                 dragStartX = e.clientX;
                 dragStartY = e.clientY;
-
-                camRz = Math.max(-75, Math.min(75, camRz + dx * 0.35));
-                camRx = Math.max(18, Math.min(72, camRx - dy * 0.3));
+                camRz = Math.max(-85, Math.min(85, camRz + dx * 0.35));
+                camRx = Math.max(15, Math.min(72, camRx - dy * 0.28));
                 updateCameraTransform();
             });
 
@@ -2943,262 +2820,363 @@
 
             vp.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                const delta = e.deltaY < 0 ? 0.06 : -0.06;
-                adjustCameraZoom(delta);
+                adjustCameraZoom(e.deltaY < 0 ? 0.08 : -0.08);
             }, { passive: false });
         }
 
+        function switchMapDisplayMode(mode) {
+            currentMapMode = mode;
+            const world = document.getElementById('map-3d-world');
+            const btn3d = document.getElementById('btn-view-3d');
+            const btnIcons = document.getElementById('btn-view-icons');
+            if (world) {
+                world.classList.toggle('mode-icons-only', mode === 'icons');
+            }
+            if (btn3d && btnIcons) {
+                const is3d = mode === '3d';
+                btn3d.classList.toggle('bg-hetianBlue', is3d);
+                btn3d.classList.toggle('text-milkWhite', is3d);
+                btn3d.classList.toggle('bg-oat', !is3d);
+                btn3d.classList.toggle('text-ink', !is3d);
+
+                btnIcons.classList.toggle('bg-hetianBlue', !is3d);
+                btnIcons.classList.toggle('text-milkWhite', !is3d);
+                btnIcons.classList.toggle('bg-oat', is3d);
+                btnIcons.classList.toggle('text-ink', is3d);
+            }
+            playTone(640, 'triangle');
+        }
+
+        function filterMapZone(zone) {
+            document.querySelectorAll('.zone-filter-btn').forEach(btn => {
+                const active = btn.dataset.zone === zone;
+                btn.classList.toggle('bg-ink', active);
+                btn.classList.toggle('text-milkWhite', active);
+                btn.classList.toggle('bg-oat', !active);
+                btn.classList.toggle('text-ink', !active);
+            });
+            document.querySelectorAll('.bldg-3d').forEach(el => {
+                const match = zone === 'all' || el.dataset.zone === zone;
+                el.classList.toggle('is-dimmed', !match);
+            });
+            playTone(580, 'sine');
+        }
+
+        function select3DBuilding(id) {
+            const b = BUILDINGS_3D.find(item => item.id === id);
+            if (!b) return;
+            selectedBldgId = id;
+
+            document.querySelectorAll('.bldg-3d').forEach(el => {
+                el.classList.toggle('is-selected', el.dataset.id === id);
+            });
+
+            const badge = document.getElementById('insp-zone-badge');
+            const tag = document.getElementById('insp-tag');
+            const icon = document.getElementById('insp-icon');
+            const title = document.getElementById('insp-title');
+            const subtitle = document.getElementById('insp-subtitle');
+            const metrics = document.getElementById('insp-metrics');
+            const body = document.getElementById('insp-visual-body');
+            const trivia = document.getElementById('insp-trivia');
+
+            if (badge) badge.textContent = b.zoneLabel;
+            if (tag) tag.textContent = b.tag;
+            if (icon) icon.textContent = b.icon;
+            if (title) title.textContent = b.name;
+            if (subtitle) subtitle.textContent = b.subtitle;
+            if (trivia) trivia.textContent = b.trivia;
+
+            if (metrics) {
+                metrics.innerHTML = b.metrics.map(m => `
+                    <div class="bg-cream p-2.5 rounded-xl border-2 border-ink">
+                        <strong class="font-display text-base sm:text-lg ${m.color} block leading-tight">${m.val}</strong>
+                        <span class="text-[10px] font-bold text-inkLight">${m.label}</span>
+                    </div>
+                `).join('');
+            }
+
+            if (body) {
+                if (b.isTMR) {
+                    let accum = 0;
+                    const stops = TMR_INGREDIENTS.map(ing => {
+                        const start = accum;
+                        accum += ing.pct;
+                        return `${ing.color} ${start}% ${accum}%`;
+                    }).join(', ');
+
+                    body.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-display text-sm text-hetianBlue">🥗 TMR 全混合日粮黄金配比环</span>
+                            <span class="text-[10px] font-bold bg-wheat px-2 py-0.5 rounded border border-ink">80元/头/日</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-24 rounded-full border-2 border-ink shrink-0 relative flex items-center justify-center" style="background: conic-gradient(${stops});">
+                                <div class="w-10 h-10 rounded-full bg-cream border-2 border-ink flex items-center justify-center font-display text-xs text-ink">TMR</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 flex-1 text-[10px] font-bold">
+                                ${TMR_INGREDIENTS.map(ing => `
+                                    <div class="flex items-center gap-1 truncate">
+                                        <span class="w-2.5 h-2.5 rounded-sm border border-ink shrink-0" style="background:${ing.color}"></span>
+                                        <span class="truncate">${ing.name} ${ing.pct}%</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (b.bars) {
+                    body.innerHTML = b.bars.map(bar => `
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span>${bar.name}</span>
+                                <span class="text-hetianBlue">${bar.pct}%</span>
+                            </div>
+                            <div class="w-full h-3 bg-oat rounded-full border border-ink overflow-hidden">
+                                <div class="h-full ${bar.color}" style="width:${bar.pct}%"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+            playTone(660, 'triangle');
+        }
+
         /********************************************************************
-         * 3. MODULE 02: SWISS DELAVAL 80-STALL ROTARY TURNTABLE & 6 STATIONS
+         * 3. MODULE 02: SWISS DELAVAL 80-STALL ROTARY TURNTABLE & 6 ACTIONS
          ********************************************************************/
         const ROTARY_STEPS = [
             {
                 badge: '工位 ① · 清洁准入',
                 metric: '泥沙阻断率 > 99%',
-                btnTitle: '① 待挤大厅 · 自动洗蹄',
+                btnText: '① 待挤大厅 · 自动洗蹄',
                 title: '步入待挤大厅 · 自动洗蹄喷淋',
-                sectorPath: 'M 250 250 L 42 190 A 212 212 0 0 1 125 78 Z',
-                desc: '奶牛排着整齐队伍步入转盘前，智能高压温和喷淋系统自动清洗牛蹄泥沙，从第一步阻断外界环境污染物进入挤奶区。',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#E0F2FE"/>
-                        <rect x="0" y="96" width="380" height="24" fill="#94A3B8"/>
-                        <!-- Cute Cow Walking Through Wash Gate -->
-                        <g transform="translate(115, 22)">
+                arcPath: 'M 250 250 L 42 185 A 212 212 0 0 1 115 85 Z',
+                desc: '奶牛排着整齐队列走上转盘前，先经过温和洁净的<strong>自动喷淋洗蹄池</strong>，彻底冲去蹄部泥沙，从源头守住无菌挤奶第一关。',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#EFF6FF"/>
+                        <rect x="0" y="96" width="420" height="24" fill="#94A3B8"/>
+                        <g transform="translate(150, 20)">
                             <rect x="20" y="14" width="84" height="44" rx="18" fill="#FFFFFF" stroke="#362B24" stroke-width="2.2"/>
-                            <circle cx="44" cy="30" r="9" fill="#362B24"/>
-                            <circle cx="78" cy="38" r="8" fill="#362B24"/>
-                            <rect x="92" y="6" width="34" height="30" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2.2"/>
-                            <ellipse cx="122" cy="26" rx="10" ry="7" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
-                            <rect x="30" y="54" width="9" height="22" rx="3" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
-                            <rect x="82" y="54" width="9" height="22" rx="3" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
+                            <circle cx="44" cy="30" r="8" fill="#362B24"/>
+                            <circle cx="78" cy="38" r="7" fill="#362B24"/>
+                            <rect x="92" y="8" width="32" height="26" rx="11" fill="#FFFFFF" stroke="#362B24" stroke-width="2.2"/>
+                            <ellipse cx="118" cy="24" rx="8" ry="6" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
+                            <rect x="32" y="56" width="10" height="36" rx="3" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
+                            <rect x="82" y="56" width="10" height="36" rx="3" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
                         </g>
-                        <!-- Upward Water Spray Jets -->
                         <g class="water-jet">
-                            <path d="M 145 96 L 135 72 M 152 96 L 152 68 M 160 96 L 170 72" stroke="#0284C7" stroke-width="3" stroke-linecap="round"/>
-                            <path d="M 196 96 L 186 72 M 203 96 L 203 68 M 211 96 L 221 72" stroke="#0284C7" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 165 96 L 182 72 M 195 96 L 190 70 M 225 96 L 234 72 M 252 96 L 242 70" stroke="#0EA5E9" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="184" cy="68" r="3" fill="#38BDF8"/>
+                            <circle cx="236" cy="68" r="3" fill="#38BDF8"/>
                         </g>
-                        <rect x="14" y="12" width="104" height="24" rx="12" fill="#2E77AE"/>
-                        <text x="66" y="28" font-size="10.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">💦 自动喷淋洗蹄</text>
-                    </svg>
-                `
+                        <rect x="14" y="12" width="120" height="24" rx="12" fill="#2E77AE"/>
+                        <text x="74" y="28" font-size="10.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🚿 温水雾化洗蹄</text>
+                    </svg>`
             },
             {
-                badge: '工位 ② · 人工严检',
-                metric: '前3把奶 100% 剔除',
-                btnTitle: '② 人工挤除“前三把奶”',
-                title: '人工挤除“前三把奶” · 感官初检',
-                sectorPath: 'M 250 250 L 125 78 A 212 212 0 0 1 285 40 Z',
-                desc: '由于乳头管最前端存留少量与外界接触的乳汁，专业挤奶员会先人工挤出前三把奶入黑色检乳杯，确认无絮状物后才上机，确保入罐原奶菌落极低！',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#FEF3C7"/>
-                        <!-- Udder & Pink Teats -->
-                        <path d="M 110 10 Q 150 56 190 10 Z" fill="#FBCFE8" stroke="#362B24" stroke-width="2.2"/>
-                        <rect x="136" y="34" width="10" height="18" rx="4" fill="#F472B6" stroke="#362B24" stroke-width="1.8"/>
-                        <rect x="156" y="34" width="10" height="18" rx="4" fill="#F472B6" stroke="#362B24" stroke-width="1.8"/>
-                        <!-- Falling Test Drops into Black Strip Cup -->
-                        <circle class="milk-drop" cx="141" cy="56" r="4" fill="#FFFFFF" stroke="#362B24" stroke-width="1.4"/>
-                        <circle class="milk-drop" style="animation-delay:0.45s" cx="161" cy="56" r="4" fill="#FFFFFF" stroke="#362B24" stroke-width="1.4"/>
-                        <rect x="128" y="84" width="46" height="26" rx="6" fill="#1E293B" stroke="#362B24" stroke-width="2"/>
-                        <text x="151" y="100" font-size="9" font-weight="bold" fill="#F2B138" text-anchor="middle">检乳杯</text>
-                        <rect x="215" y="34" width="144" height="52" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
-                        <text x="287" y="56" font-size="11" font-weight="900" fill="#E57A6B" text-anchor="middle">🚫 剔除前三把奶</text>
-                        <text x="287" y="74" font-size="9.5" font-weight="bold" fill="#362B24" text-anchor="middle">杜绝前端杂菌混入原奶</text>
-                    </svg>
-                `
+                badge: '工位 ② · 人工验奶',
+                metric: '菌落总数远优于欧盟',
+                btnText: '② 人工挤除“前三把奶”',
+                title: '人工挤除“前三把奶”并检查性状',
+                arcPath: 'M 250 250 L 115 85 A 212 212 0 0 1 250 38 Z',
+                desc: '乳头管最前端存留少量与外界接触的乳汁，由专业挤奶员<strong>人工挤除前三把奶</strong>并观察乳汁状态，确保入罐原奶菌落指数极低！',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#FFFBEB"/>
+                        <path d="M 130 14 Q 210 38 290 14 L 270 50 Q 210 64 150 50 Z" fill="#FDE68A" stroke="#362B24" stroke-width="2.2"/>
+                        <rect x="184" y="52" width="10" height="16" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
+                        <rect x="226" y="52" width="10" height="16" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
+                        <g class="milk-drop">
+                            <circle cx="189" cy="74" r="3.5" fill="#FFFFFF" stroke="#2E77AE" stroke-width="1.5"/>
+                            <circle cx="231" cy="74" r="3.5" fill="#FFFFFF" stroke="#2E77AE" stroke-width="1.5"/>
+                        </g>
+                        <rect x="172" y="92" width="76" height="22" rx="6" fill="#2E77AE" stroke="#362B24" stroke-width="2"/>
+                        <text x="210" y="106" font-size="9.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">前三把弃奶杯</text>
+                        <rect x="14" y="12" width="124" height="24" rx="12" fill="#E57A6B"/>
+                        <text x="76" y="28" font-size="10.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🧤 人工验奶去杂质</text>
+                    </svg>`
             },
             {
-                badge: '工位 ③ · 护乳消毒',
-                metric: '食品级药浴杀菌',
-                btnTitle: '③ 乳头温和药浴消毒',
-                title: '食品级护乳药浴 · 无菌擦拭',
-                sectorPath: 'M 250 250 L 285 40 A 212 212 0 0 1 430 140 Z',
-                desc: '使用食品级温和护乳消毒液进行药浴包裹，并用独立一次性纸巾一牛一巾擦干，既消灭皮肤表面细菌又滋润呵护奶牛乳头。',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#EEF6E8"/>
-                        <path d="M 110 10 Q 150 56 190 10 Z" fill="#FBCFE8" stroke="#362B24" stroke-width="2.2"/>
-                        <rect x="136" y="34" width="10" height="18" rx="4" fill="#F472B6" stroke="#362B24" stroke-width="1.8"/>
-                        <rect x="156" y="34" width="10" height="18" rx="4" fill="#F472B6" stroke="#362B24" stroke-width="1.8"/>
-                        <!-- Blue Dip Cup Lifting Gently -->
+                badge: '工位 ③ · 药浴护乳',
+                metric: '食品级温和杀菌',
+                btnText: '③ 乳头温和药浴消毒',
+                title: '食品级温和药浴消毒与擦拭',
+                arcPath: 'M 250 250 L 250 38 A 212 212 0 0 1 395 95 Z',
+                desc: '使用食品级护乳药浴液对乳头进行全方位浸泡消毒，并用专用消毒纸巾单牛单巾擦干，既抑菌又滋润护肤。',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#ECFDF5"/>
+                        <path d="M 140 12 Q 210 34 280 12 L 262 46 Q 210 58 158 46 Z" fill="#FDE68A" stroke="#362B24" stroke-width="2.2"/>
+                        <rect x="188" y="48" width="10" height="16" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
+                        <rect x="222" y="48" width="10" height="16" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.8"/>
                         <g class="cup-lift">
-                            <rect x="130" y="54" width="42" height="32" rx="8" fill="#2E77AE" stroke="#362B24" stroke-width="2"/>
-                            <text x="151" y="74" font-size="9.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">药浴杯</text>
+                            <polygon points="180,68 240,68 232,106 188,106" fill="#38BDF8" stroke="#362B24" stroke-width="2"/>
+                            <text x="210" y="90" font-size="9.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">食品级药浴液</text>
                         </g>
-                        <text x="195" y="45" font-size="18">✨</text>
-                        <rect x="218" y="34" width="142" height="52" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
-                        <text x="289" y="56" font-size="11" font-weight="900" fill="#4A7C59" text-anchor="middle">🛡️ 食品级护乳药浴</text>
-                        <text x="289" y="74" font-size="9.5" font-weight="bold" fill="#362B24" text-anchor="middle">一牛一巾无菌擦拭</text>
-                    </svg>
-                `
+                        <text x="268" y="64" font-size="16">✨</text>
+                        <rect x="14" y="12" width="124" height="24" rx="12" fill="#4A7C59"/>
+                        <text x="76" y="28" font-size="10.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🧼 温和药浴护乳</text>
+                    </svg>`
             },
             {
-                badge: '工位 ④ · 仿生智能挤奶',
-                metric: '80位同步 8~10分钟',
-                btnTitle: '④ 套上利拉伐智能挤奶器',
-                title: '套上瑞士利拉伐智能脉动挤奶器',
-                sectorPath: 'M 250 250 L 430 140 A 212 212 0 0 1 430 360 Z',
-                desc: '80 头奶牛随白色瓷砖圆盘同步平稳旋转，利拉伐仿生脉动挤奶器模拟小牛温柔吸吮节律，牛奶经全密封透明奶管汇入中心。',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#D5EBF7"/>
-                        <path d="M 90 10 Q 135 56 180 10 Z" fill="#FBCFE8" stroke="#362B24" stroke-width="2.2"/>
-                        <!-- 4 Stainless Milking Cups Attached -->
-                        <rect x="116" y="36" width="14" height="30" rx="5" fill="#94A3B8" stroke="#362B24" stroke-width="2"/>
-                        <rect x="140" y="36" width="14" height="30" rx="5" fill="#94A3B8" stroke="#362B24" stroke-width="2"/>
-                        <!-- Sealed Sterile Milk Pipeline Flowing to Center -->
-                        <path d="M 123 66 Q 135 86 147 66" fill="none" stroke="#362B24" stroke-width="4"/>
-                        <path d="M 135 76 L 340 76" stroke="#362B24" stroke-width="10" stroke-linecap="round"/>
-                        <path class="pipe-flow-fast" d="M 135 76 L 340 76" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
-                        <rect x="200" y="22" width="155" height="38" rx="10" fill="#2E77AE" stroke="#362B24" stroke-width="2"/>
-                        <text x="277" y="45" font-size="10.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">💓 仿生脉动 · 全程密封</text>
-                    </svg>
-                `
+                badge: '工位 ④ · 仿生套杯',
+                metric: '单轮仅需 8~10 分钟',
+                btnText: '④ 套上利拉伐智能挤奶器',
+                title: '套上瑞士利拉伐仿生脉动挤奶器',
+                arcPath: 'M 250 250 L 395 95 A 212 212 0 0 1 452 250 Z',
+                desc: '80 个转盘工位同步作业，瑞士利拉伐挤奶杯以<strong>仿生小牛吮吸频率</strong>轻柔脉动负压挤奶，奶牛惬意反刍，8~10 分钟完成整轮。',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#EFF6FF"/>
+                        <path d="M 140 10 Q 210 32 280 10 L 262 44 Q 210 56 158 44 Z" fill="#FDE68A" stroke="#362B24" stroke-width="2.2"/>
+                        <g class="pulse-ring">
+                            <rect x="182" y="46" width="14" height="28" rx="4" fill="#94A3B8" stroke="#362B24" stroke-width="2"/>
+                            <rect x="224" y="46" width="14" height="28" rx="4" fill="#94A3B8" stroke="#362B24" stroke-width="2"/>
+                        </g>
+                        <rect x="190" y="76" width="40" height="14" rx="7" fill="#2E77AE" stroke="#362B24" stroke-width="2"/>
+                        <path class="pipe-flow-fast" d="M 230 83 L 390 83" stroke="#38BDF8" stroke-width="6" stroke-linecap="round"/>
+                        <rect x="14" y="12" width="132" height="24" rx="12" fill="#2E77AE"/>
+                        <text x="80" y="28" font-size="10.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🎡 80位仿生脉动吸乳</text>
+                    </svg>`
             },
             {
-                badge: '工位 ⑤ · 红外自动脱杯',
-                metric: '0 过度挤奶损伤',
-                btnTitle: '⑤ 流速感应 · 泵杯自动脱开',
-                title: '红外流速感应 · 泵杯自动轻柔脱开',
-                sectorPath: 'M 250 250 L 430 360 A 212 212 0 0 1 250 462 Z',
-                desc: '智能流量传感器实时监测每头牛的出奶流速，一旦产奶完成，系统自动切断真空负压，挤奶泵杯轻柔自动脱落，绝不拉伤奶牛。',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#FFFBEB"/>
-                        <path d="M 95 10 Q 135 50 175 10 Z" fill="#FBCFE8" stroke="#362B24" stroke-width="2.2"/>
-                        <!-- Sensor Beam -->
-                        <line class="sensor-beam" x1="80" y1="54" x2="195" y2="54" stroke="#E57A6B" stroke-width="2.5" stroke-dasharray="5 4"/>
-                        <!-- Cups Safely Detached Below -->
+                badge: '工位 ⑤ · 智能脱杯',
+                metric: '0 过度拉扯损伤',
+                btnText: '⑤ 流速感应 · 泵杯自动脱开',
+                title: '红外流速感应 · 产奶完毕泵杯自动脱开',
+                arcPath: 'M 250 250 L 452 250 A 212 212 0 0 1 320 448 Z',
+                desc: '每套挤奶器配备独立牛奶流量传感器，一旦检测到单头牛产奶结束，<strong>真空自动切断、挤奶杯轻柔脱落</strong>，杜绝空吸损伤。',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#FEFCE8"/>
+                        <path d="M 140 10 Q 210 32 280 10 L 262 44 Q 210 56 158 44 Z" fill="#FDE68A" stroke="#362B24" stroke-width="2.2"/>
+                        <line class="sensor-beam" x1="150" y1="54" x2="270" y2="54" stroke="#E57A6B" stroke-width="2.5" stroke-dasharray="6 4"/>
                         <g transform="translate(0, 14)">
-                            <rect x="116" y="48" width="14" height="28" rx="5" fill="#CBD5E1" stroke="#362B24" stroke-width="2"/>
-                            <rect x="140" y="48" width="14" height="28" rx="5" fill="#CBD5E1" stroke="#362B24" stroke-width="2"/>
+                            <rect x="182" y="54" width="14" height="26" rx="4" fill="#CBD5E1" stroke="#362B24" stroke-width="2"/>
+                            <rect x="224" y="54" width="14" height="26" rx="4" fill="#CBD5E1" stroke="#362B24" stroke-width="2"/>
+                            <rect x="190" y="80" width="40" height="12" rx="6" fill="#4A7C59" stroke="#362B24" stroke-width="1.8"/>
                         </g>
-                        <rect x="205" y="34" width="155" height="52" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2"/>
-                        <text x="282" y="56" font-size="11" font-weight="900" fill="#2E77AE" text-anchor="middle">📡 流速归零 · 自动脱杯</text>
-                        <text x="282" y="74" font-size="9.5" font-weight="bold" fill="#4A7C59" text-anchor="middle">动物福利与乳腺健康双保障</text>
-                    </svg>
-                `
+                        <rect x="14" y="12" width="132" height="24" rx="12" fill="#F2B138" stroke="#362B24" stroke-width="1.5"/>
+                        <text x="80" y="28" font-size="10.5" font-weight="bold" fill="#362B24" text-anchor="middle">📡 流速归零自动脱杯</text>
+                    </svg>`
             },
             {
-                badge: '工位 ⑥ · 地下暗管直输',
-                metric: '4°C 速冷 · 0 外部运输',
-                btnTitle: '⑥ 速冷入120吨罐 · 地下暗管直输',
-                title: '4°C 瞬冷入 120T 储罐 · 地下无菌管道直连工厂',
-                sectorPath: 'M 250 250 L 250 462 A 212 212 0 0 1 42 295 Z',
-                desc: '原奶挤出后瞬间过滤速冷至 4°C 存入总容量 120 吨巨型储奶罐，直接通过地底全封闭无菌不锈钢管道泵入隔壁加工车间，省去奶罐车外部运输，彻底杜绝细菌滋生！',
-                actionSvg: `
-                    <svg viewBox="0 0 380 120" class="w-full h-28 block">
-                        <rect width="380" height="120" rx="12" fill="#E0F2FE"/>
-                        <!-- 120T Storage Tank -->
-                        <rect x="24" y="20" width="76" height="82" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2.2"/>
-                        <text x="62" y="54" font-size="11" font-weight="900" fill="#2E77AE" text-anchor="middle">120T</text>
-                        <text x="62" y="70" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">❄️ 4°C速冷罐</text>
-                        <!-- Underground Sterile Pipe -->
-                        <line x1="100" y1="84" x2="268" y2="84" stroke="#362B24" stroke-width="12" stroke-linecap="round"/>
-                        <line class="pipe-flow-fast" x1="100" y1="84" x2="268" y2="84" stroke="#38BDF8" stroke-width="6" stroke-linecap="round"/>
-                        <text x="184" y="68" font-size="10" font-weight="900" fill="#0284C7" text-anchor="middle">地下无菌管道直连</text>
-                        <!-- Processing Plant -->
-                        <rect x="268" y="24" width="88" height="78" rx="12" fill="#4A7C59" stroke="#362B24" stroke-width="2.2"/>
-                        <text x="312" y="58" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">🏭 加工车间</text>
-                        <text x="312" y="75" font-size="9" font-weight="bold" fill="#F2B138" text-anchor="middle">0 外部运输</text>
-                    </svg>
-                `
+                badge: '工位 ⑥ · 暗管直输',
+                metric: '全程 0 接触空气',
+                btnText: '⑥ 速冷入120吨罐 · 地下暗管直输',
+                title: '过滤速冷存入120吨罐 · 地下无菌暗管直连车间',
+                arcPath: 'M 250 250 L 320 448 A 212 212 0 0 1 65 340 Z',
+                desc: '原奶挤出后瞬间板式换热速冷至 <strong>4°C</strong>，存入总容量 <strong>120 吨</strong>不锈钢储奶罐，直接经<strong>地下无菌密闭暗管</strong>泵入加工车间，省去外部奶罐车运输！',
+                sceneSVG: `
+                    <svg viewBox="0 0 420 120" class="w-full h-28 block">
+                        <rect width="420" height="120" fill="#E0F2FE"/>
+                        <rect x="28" y="22" width="76" height="82" rx="12" fill="#FFFFFF" stroke="#362B24" stroke-width="2.4"/>
+                        <text x="66" y="58" font-size="11" font-weight="900" fill="#2E77AE" text-anchor="middle">120T</text>
+                        <text x="66" y="73" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">4°C速冷罐</text>
+                        <line x1="104" y1="74" x2="310" y2="74" stroke="#362B24" stroke-width="14" stroke-linecap="round"/>
+                        <line class="pipe-flow-fast" x1="104" y1="74" x2="310" y2="74" stroke="#38BDF8" stroke-width="7" stroke-linecap="round"/>
+                        <text x="207" y="56" font-size="10" font-weight="900" fill="#2E77AE" text-anchor="middle">地下无菌不锈钢暗管 · 0接触空气</text>
+                        <rect x="310" y="22" width="82" height="82" rx="12" fill="#4A7C59" stroke="#362B24" stroke-width="2.4"/>
+                        <text x="351" y="58" font-size="10.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">净化车间</text>
+                        <text x="351" y="73" font-size="9" font-weight="bold" fill="#FDE68A" text-anchor="middle">巴氏锁鲜</text>
+                    </svg>`
             }
         ];
 
-        let isRotaryPlaying = true;
+        let rotaryPlaying = true;
+        let currentRotaryStep = 0;
 
         function initRotaryCows() {
-            const cowsLayer = document.getElementById('rotary-cows-layer');
-            if (!cowsLayer) return;
-            const totalVisualCows = 24;
-            let html = '';
-            for (let i = 0; i < totalVisualCows; i++) {
-                const angle = (360 / totalVisualCows) * i;
-                html += `
-                    <g transform="rotate(${angle}, 250, 250)">
-                        <line x1="250" y1="42" x2="250" y2="124" stroke="#CBD5E1" stroke-width="1.2"/>
-                        <rect x="242" y="54" width="16" height="44" rx="7" fill="#FFFFFF" stroke="#362B24" stroke-width="1.8"/>
-                        <circle cx="247" cy="68" r="3.5" fill="#362B24"/>
-                        <circle cx="253" cy="82" r="3" fill="#362B24"/>
-                        <rect x="245" y="96" width="10" height="10" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.4"/>
-                    </g>
+            const layer = document.getElementById('rotary-cows-layer');
+            if (!layer) return;
+            layer.innerHTML = '';
+            const count = 24;
+            for (let i = 0; i < count; i++) {
+                const angle = (i * 360) / count;
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `rotate(${angle}, 250, 250)`);
+                g.innerHTML = `
+                    <rect x="242" y="52" width="16" height="34" rx="7" fill="#FFFFFF" stroke="#362B24" stroke-width="1.6"/>
+                    <circle cx="247" cy="64" r="3.2" fill="#362B24"/>
+                    <circle cx="253" cy="74" r="3" fill="#362B24"/>
+                    <rect x="244" y="84" width="12" height="9" rx="4" fill="#F3A6B1" stroke="#362B24" stroke-width="1.3"/>
                 `;
+                layer.appendChild(g);
             }
-            cowsLayer.innerHTML = html;
         }
 
-        function renderRotaryStepsGrid(activeIdx) {
+        function renderRotaryButtons() {
             const grid = document.getElementById('rotary-steps-grid');
             if (!grid) return;
-            grid.innerHTML = ROTARY_STEPS.map((st, idx) => {
-                const active = idx === activeIdx;
+            grid.innerHTML = ROTARY_STEPS.map((s, idx) => {
+                const active = idx === currentRotaryStep;
                 return `
-                    <button onclick="selectRotaryStep(${idx})" class="px-3 py-2.5 text-left font-bold text-xs sketch-btn flex items-center justify-between ${active ? 'bg-hetianBlue text-milkWhite' : 'bg-cream hover:bg-wheat text-ink'}">
-                        <span class="truncate">${st.btnTitle}</span>
-                        <span class="text-[10px] opacity-80 shrink-0 ml-1">${active ? '● 演示中' : '查看'}</span>
+                    <button onclick="selectRotaryStep(${idx})" class="px-3 py-2 text-left text-xs font-bold sketch-btn flex items-center justify-between gap-2 ${active ? 'bg-hetianBlue text-milkWhite' : 'bg-cream hover:bg-wheat text-ink'}">
+                        <span class="truncate">${s.btnText}</span>
+                        <span class="text-[10px] opacity-80 shrink-0">${active ? '播放中' : '查看'}</span>
                     </button>
                 `;
             }).join('');
         }
 
         function selectRotaryStep(idx) {
-            const st = ROTARY_STEPS[idx] || ROTARY_STEPS[0];
-            renderRotaryStepsGrid(idx);
+            currentRotaryStep = idx;
+            const step = ROTARY_STEPS[idx];
+            if (!step) return;
+            renderRotaryButtons();
 
             const arc = document.getElementById('step-sector-arc');
-            if (arc) arc.setAttribute('d', st.sectorPath);
+            const badge = document.getElementById('rstep-badge');
+            const metric = document.getElementById('rstep-metric');
+            const title = document.getElementById('rstep-title');
+            const stage = document.getElementById('rotary-action-stage');
+            const desc = document.getElementById('rstep-desc');
 
-            document.getElementById('rstep-badge').textContent = st.badge;
-            document.getElementById('rstep-metric').textContent = st.metric;
-            document.getElementById('rstep-title').textContent = st.title;
-            document.getElementById('rstep-desc').textContent = st.desc;
-            document.getElementById('rotary-action-stage').innerHTML = st.actionSvg;
-            playTone(620 + idx * 25, 'sine');
+            if (arc) arc.setAttribute('d', step.arcPath);
+            if (badge) badge.textContent = step.badge;
+            if (metric) metric.textContent = step.metric;
+            if (title) title.textContent = step.title;
+            if (stage) stage.innerHTML = step.sceneSVG;
+            if (desc) desc.innerHTML = step.desc;
+            playTone(620 + idx * 35, 'triangle');
         }
 
         function toggleRotaryPlay() {
-            isRotaryPlaying = !isRotaryPlaying;
-            const ring = document.getElementById('rotary-turntable-ring');
+            rotaryPlaying = !rotaryPlaying;
+            document.documentElement.style.setProperty('--rotary-state', rotaryPlaying ? 'running' : 'paused');
             const btn = document.getElementById('rotary-play-btn');
-            if (ring) {
-                ring.style.setProperty('--rotary-state', isRotaryPlaying ? 'running' : 'paused');
-            }
             if (btn) {
-                btn.textContent = isRotaryPlaying ? '⏸️ 暂停旋转' : '▶️ 继续旋转';
-                btn.classList.toggle('bg-pasture', isRotaryPlaying);
-                btn.classList.toggle('bg-coral', !isRotaryPlaying);
+                btn.textContent = rotaryPlaying ? '⏸️ 暂停旋转' : '▶️ 继续旋转';
+                btn.classList.toggle('bg-pasture', rotaryPlaying);
+                btn.classList.toggle('bg-coral', !rotaryPlaying);
             }
-            playTone(540, 'triangle');
+            playTone(540, 'sine');
         }
 
-        function setRotarySpeed(seconds, clickedBtn) {
-            const ring = document.getElementById('rotary-turntable-ring');
-            if (ring) {
-                ring.style.setProperty('--rotary-duration', `${seconds}s`);
-            }
+        function setRotarySpeed(seconds, btnEl) {
+            document.documentElement.style.setProperty('--rotary-duration', `${seconds}s`);
             document.querySelectorAll('.rotary-spd-btn').forEach(b => {
                 b.classList.remove('bg-wheat');
                 b.classList.add('bg-oat');
             });
-            if (clickedBtn) {
-                clickedBtn.classList.remove('bg-oat');
-                clickedBtn.classList.add('bg-wheat');
+            if (btnEl) {
+                btnEl.classList.remove('bg-oat');
+                btnEl.classList.add('bg-wheat');
             }
             playTone(680, 'sine');
         }
 
         /********************************************************************
-         * 4. MODULE 03: ANIME STERILIZATION BATTLE & GIANT STAINLESS TANKS
+         * 4. MODULE 03: STERILIZATION BATTLE & GIANT STAINLESS STEEL TANKS
          ********************************************************************/
         function setFactoryFlowMode(mode) {
             const btnProd = document.getElementById('btn-flow-prod');
             const btnCip = document.getElementById('btn-flow-cip');
-            const p1 = document.getElementById('factory-pipe-anim-1');
-            const p2 = document.getElementById('factory-pipe-anim-2');
-
+            const pipe1 = document.getElementById('factory-pipe-anim-1');
+            const pipe2 = document.getElementById('factory-pipe-anim-2');
             const isProd = mode === 'prod';
+
             if (btnProd && btnCip) {
                 btnProd.classList.toggle('bg-hetianBlue', isProd);
                 btnProd.classList.toggle('text-milkWhite', isProd);
@@ -3210,11 +3188,11 @@
                 btnCip.classList.toggle('bg-oat', isProd);
                 btnCip.classList.toggle('text-ink', isProd);
             }
-            if (p1 && p2) {
-                p1.setAttribute('stroke', isProd ? '#FFFFFF' : '#86EFAC');
-                p2.setAttribute('stroke', isProd ? '#2E77AE' : '#38BDF8');
+            if (pipe1 && pipe2) {
+                pipe1.setAttribute('stroke', isProd ? '#FFFFFF' : '#38BDF8');
+                pipe2.setAttribute('stroke', isProd ? '#2E77AE' : '#4ADE80');
             }
-            playTone(isProd ? 600 : 720, 'triangle');
+            playTone(isProd ? 620 : 720, 'triangle');
         }
 
         function setSterilizeTemp(temp) {
@@ -3222,424 +3200,410 @@
             const readout = document.getElementById('battle-temp-readout');
             const svgLabel = document.getElementById('battle-temp-svg-label');
             const milkBg = document.getElementById('battle-milk-bg');
-            const goldWaves = document.getElementById('battle-gold-waves');
-            const uhtFlames = document.getElementById('battle-uht-flames');
+            const waves = document.getElementById('battle-gold-waves');
+            const flames = document.getElementById('battle-uht-flames');
             const germsGroup = document.getElementById('battle-germs-group');
-
             const germVal = document.getElementById('meter-germ-val');
             const germBar = document.getElementById('meter-germ-bar');
             const nutriVal = document.getElementById('meter-nutri-val');
             const nutriBar = document.getElementById('meter-nutri-bar');
             const verdict = document.getElementById('battle-verdict-pill');
-
             const btnPast = document.getElementById('btn-battle-past');
             const btnUht = document.getElementById('btn-battle-uht');
 
             if (slider) slider.value = temp;
             if (readout) readout.textContent = `${temp} °C`;
 
-            const isUHT = temp >= 100;
-            const isRaw = temp < 72;
+            const sprites = [
+                document.getElementById('sprite-1'),
+                document.getElementById('sprite-2'),
+                document.getElementById('sprite-3')
+            ];
 
-            if (btnPast && btnUht) {
-                btnPast.classList.toggle('bg-pasture', !isUHT && !isRaw);
-                btnPast.classList.toggle('text-milkWhite', !isUHT && !isRaw);
-                btnPast.classList.toggle('bg-cream', isUHT || isRaw);
-                btnPast.classList.toggle('text-ink', isUHT || isRaw);
-
-                btnUht.classList.toggle('bg-coral', isUHT);
-                btnUht.classList.toggle('text-milkWhite', isUHT);
-                btnUht.classList.toggle('bg-cream', !isUHT);
-                btnUht.classList.toggle('text-ink', !isUHT);
-            }
-
-            if (isRaw) {
-                if (svgLabel) svgLabel.textContent = `🌡️ 当前温区：${temp}°C 低温未杀菌`;
+            if (temp < 72) {
+                if (svgLabel) svgLabel.textContent = `🌡️ 当前温区：${temp}°C 杀菌未达标`;
                 if (milkBg) milkBg.setAttribute('fill', '#F8FAFC');
-                if (goldWaves) goldWaves.classList.add('hidden');
-                if (uhtFlames) uhtFlames.classList.add('hidden');
-                if (germsGroup) {
-                    germsGroup.innerHTML = `
-                        <g transform="translate(208, 64)"><text x="0" y="0" font-size="24" text-anchor="middle">🦠</text><text x="0" y="14" font-size="9" font-weight="bold" fill="#E57A6B" text-anchor="middle">⚠️ 杂菌活跃</text></g>
-                        <g transform="translate(372, 64)"><text x="0" y="0" font-size="24" text-anchor="middle">🦠</text><text x="0" y="14" font-size="9" font-weight="bold" fill="#E57A6B" text-anchor="middle">⚠️ 杂菌活跃</text></g>
-                    `;
-                }
-                [1, 2, 3].forEach(i => {
-                    const sp = document.getElementById(`sprite-${i}`);
-                    if (sp) sp.style.opacity = '1';
-                });
-                if (germVal) { germVal.textContent = '45%（需继续升温）'; germVal.className = 'text-coral'; }
+                if (waves) waves.classList.add('hidden');
+                if (flames) flames.classList.add('hidden');
+                if (germsGroup) germsGroup.style.opacity = '1';
+                sprites.forEach(s => { if (s) s.style.opacity = '1'; });
+                if (germVal) { germVal.textContent = '仅 45%（存在杂菌风险）'; germVal.className = 'text-coral'; }
                 if (germBar) { germBar.style.width = '45%'; germBar.className = 'h-full bg-coral transition-all duration-300'; }
-                if (nutriVal) { nutriVal.textContent = '100% 原始状态'; nutriVal.className = 'text-hetianBlue'; }
+                if (nutriVal) { nutriVal.textContent = '100% 保留'; nutriVal.className = 'text-hetianBlue'; }
                 if (nutriBar) { nutriBar.style.width = '100%'; nutriBar.className = 'h-full bg-wheat transition-all duration-300'; }
                 if (verdict) {
-                    verdict.className = 'p-2.5 rounded-xl bg-wheat/40 border-2 border-ink text-xs font-bold text-ink text-center';
-                    verdict.textContent = '⚠️ 温度低于 72°C，杂菌尚未完全清除，继续升温至 72~85°C 进入巴氏黄金锁鲜区！';
+                    verdict.textContent = '⚠️ 温度低于 72°C，致病杂菌尚未彻底灭杀，不能直接饮用哦！';
+                    verdict.className = 'p-2.5 rounded-xl bg-coral/20 border-2 border-ink text-xs font-bold text-ink text-center';
                 }
-            } else if (!isUHT) {
-                if (svgLabel) svgLabel.textContent = `🌡️ 当前温区：${temp}°C 巴氏锁鲜`;
+            } else if (temp <= 88) {
+                if (svgLabel) svgLabel.textContent = `🌡️ 当前温区：${temp}°C 禾田巴氏锁鲜`;
                 if (milkBg) milkBg.setAttribute('fill', '#FFFBEB');
-                if (goldWaves) goldWaves.classList.remove('hidden');
-                if (uhtFlames) uhtFlames.classList.add('hidden');
-                if (germsGroup) {
-                    germsGroup.innerHTML = `
-                        <g transform="translate(208, 66)"><g class="germ-popped"><text x="0" y="0" font-size="24" text-anchor="middle">🦠</text><text x="0" y="14" font-size="9" font-weight="bold" fill="#E57A6B" text-anchor="middle">💥 杂菌清零</text></g></g>
-                        <g transform="translate(372, 66)"><g class="germ-popped" style="animation-delay:0.2s"><text x="0" y="0" font-size="24" text-anchor="middle">🦠</text><text x="0" y="14" font-size="9" font-weight="bold" fill="#E57A6B" text-anchor="middle">💥 杂菌清零</text></g></g>
-                    `;
-                }
-                [1, 2, 3].forEach(i => {
-                    const sp = document.getElementById(`sprite-${i}`);
-                    const sh = document.getElementById(`sprite-shield-${i}`);
-                    if (sp) { sp.style.opacity = '1'; sp.classList.add('sprite-happy'); }
-                    if (sh) sh.style.opacity = '1';
-                });
+                if (waves) waves.classList.remove('hidden');
+                if (flames) flames.classList.add('hidden');
+                if (germsGroup) germsGroup.style.opacity = '0.15';
+                sprites.forEach(s => { if (s) s.style.opacity = '1'; });
                 if (germVal) { germVal.textContent = '99.99%（安全达标）'; germVal.className = 'text-pastureDark'; }
                 if (germBar) { germBar.style.width = '99%'; germBar.className = 'h-full bg-pasture transition-all duration-300'; }
                 if (nutriVal) { nutriVal.textContent = '100% 鲜活跳动'; nutriVal.className = 'text-hetianBlue'; }
                 if (nutriBar) { nutriBar.style.width = '100%'; nutriBar.className = 'h-full bg-wheat transition-all duration-300'; }
                 if (verdict) {
+                    verdict.textContent = '✨ 禾田主打 72~85°C 巴氏工艺：消灭杂菌的同时完整留住三大活性营养蛋白！';
                     verdict.className = 'p-2.5 rounded-xl bg-sprout/40 border-2 border-ink text-xs font-bold text-ink text-center';
-                    verdict.textContent = `✨ 禾田主打 ${temp}°C 巴氏低温工艺：精准消灭杂菌，完整留住乳铁蛋白与免疫球蛋白活性！`;
+                }
+                if (btnPast && btnUht) {
+                    btnPast.className = 'px-3.5 py-2 bg-pasture text-milkWhite font-bold text-xs sketch-btn';
+                    btnUht.className = 'px-3.5 py-2 bg-cream hover:bg-coral hover:text-milkWhite text-ink font-bold text-xs sketch-btn';
                 }
             } else {
                 if (svgLabel) svgLabel.textContent = `🔥 当前温区：${temp}°C 超高温灭菌`;
                 if (milkBg) milkBg.setAttribute('fill', '#FEE2E2');
-                if (goldWaves) goldWaves.classList.add('hidden');
-                if (uhtFlames) uhtFlames.classList.remove('hidden');
-                if (germsGroup) {
-                    germsGroup.innerHTML = `
-                        <g transform="translate(208, 66)"><text x="0" y="0" font-size="14" font-weight="900" fill="#991B1B" text-anchor="middle">💨 商业无菌</text></g>
-                        <g transform="translate(372, 66)"><text x="0" y="0" font-size="14" font-weight="900" fill="#991B1B" text-anchor="middle">💨 商业无菌</text></g>
-                    `;
-                }
-                [1, 2, 3].forEach(i => {
-                    const sp = document.getElementById(`sprite-${i}`);
-                    const sh = document.getElementById(`sprite-shield-${i}`);
-                    if (sp) { sp.style.opacity = '0.28'; sp.classList.remove('sprite-happy'); }
-                    if (sh) sh.style.opacity = '0';
-                });
-                if (germVal) { germVal.textContent = '100% 商业无菌（常温长保）'; germVal.className = 'text-ink'; }
+                if (waves) waves.classList.add('hidden');
+                if (flames) flames.classList.remove('hidden');
+                if (germsGroup) germsGroup.style.opacity = '0';
+                sprites.forEach(s => { if (s) s.style.opacity = '0.22'; });
+                if (germVal) { germVal.textContent = '100% 商业无菌（常温长存）'; germVal.className = 'text-ink'; }
                 if (germBar) { germBar.style.width = '100%'; germBar.className = 'h-full bg-ink transition-all duration-300'; }
-                if (nutriVal) { nutriVal.textContent = '0% 活性蛋白高温失活'; nutriVal.className = 'text-coral'; }
-                if (nutriBar) { nutriBar.style.width = '6%'; nutriBar.className = 'h-full bg-coral transition-all duration-300'; }
+                if (nutriVal) { nutriVal.textContent = '0%（高温已全部失活）'; nutriVal.className = 'text-coral'; }
+                if (nutriBar) { nutriBar.style.width = '8%'; nutriBar.className = 'h-full bg-coral transition-all duration-300'; }
                 if (verdict) {
-                    verdict.className = 'p-2.5 rounded-xl bg-coral/25 border-2 border-ink text-xs font-bold text-ink text-center';
-                    verdict.textContent = '🔥 135°C+ 超高温灭菌虽可常温久存，但乳铁蛋白等天然活性物质会全部受热失活（禾田暂不生产常温奶）！';
+                    verdict.textContent = '🔥 135°C+ 超高温常温奶虽可长期常温保存，但热敏活性蛋白已全部失活，禾田暂未生产！';
+                    verdict.className = 'p-2.5 rounded-xl bg-wheat/50 border-2 border-ink text-xs font-bold text-ink text-center';
+                }
+                if (btnPast && btnUht) {
+                    btnPast.className = 'px-3.5 py-2 bg-cream hover:bg-pasture hover:text-milkWhite text-ink font-bold text-xs sketch-btn';
+                    btnUht.className = 'px-3.5 py-2 bg-coral text-milkWhite font-bold text-xs sketch-btn';
                 }
             }
         }
 
-        const TANKS_DATA = {
+        const TANK_DATA = {
             holding: {
                 badge: '🔵 核心温控杀菌罐体',
-                status: '● 75.0°C 精准恒温',
+                status: '● 75.0°C 精准恒温中',
                 icon: '🌡️',
                 title: '持温罐',
                 sub: '72~85°C 巴氏低温锁鲜心脏',
                 metrics: [
-                    { label: '目标温区', val: '72~85°C' },
-                    { label: '控温精度', val: '±0.2°C' }
+                    { label: '精准控温', val: '72~85°C' },
+                    { label: '活性保留', val: '> 98%' }
                 ],
                 chips: [
-                    '🛡️ 精准维持巴氏杀菌黄金温度时间窗口',
-                    '✨ 保留乳铁蛋白、免疫球蛋白与乳白蛋白活性',
-                    '🥛 还原北纬40°生牛乳清甜回甘本味'
+                    '🛡️ 完整守护乳铁蛋白、免疫球蛋白与乳白蛋白',
+                    '🦠 精准灭活致病杂菌，保留鲜乳清甜本味',
+                    '❄️ 持温后立即进入冰水板换速冷至 2~6°C'
                 ]
             },
             blend4: {
-                badge: '🔵 智造配料工段',
-                status: '● 变频低剪切搅拌',
+                badge: '🔵 准备车间核心大罐',
+                status: '● 316L食品级不锈钢',
                 icon: '🥣',
                 title: '4# 配料罐',
-                sub: '低温酸奶与特色风味乳精准调配',
+                sub: '发酵乳与风味酸奶精准水合罐',
                 metrics: [
-                    { label: '搅拌方式', val: '顶置变频桨' },
-                    { label: '配料洁净度', val: '0多余添加' }
+                    { label: '搅拌转速', val: '变频低剪切' },
+                    { label: '清洁标准', val: '全自动CIP' }
                 ],
                 chips: [
-                    '🧬 专线调配 A1 醇厚发酵乳与双皮酪基底',
-                    '🌿 严格遵循“致·简”清洁标签配方标准',
-                    '🔄 全封闭无菌管路直输下游定型工段'
+                    '🥛 接收地下暗管直输的 100% 自有牧场生牛乳',
+                    '🌀 底部偏心推进式搅拌桨温柔混匀，不破坏蛋白结构',
+                    '📊 称重传感器实时联动中控室，配比误差 < 0.1%'
                 ]
             },
             blend5: {
-                badge: '🔵 智造配料工段',
-                status: '● 双罐并行高通量',
-                icon: '🍯',
+                badge: '🔵 准备车间双子大罐',
+                status: '● 恒温预热待发酵',
+                icon: '🧪',
                 title: '5# 配料罐',
-                sub: '0蔗糖酸奶与爆珠酸奶风味融合',
+                sub: '0蔗糖 & 特色深加工酸奶配料中枢',
                 metrics: [
-                    { label: '蔗糖添加', val: '0.0 g' },
-                    { label: '温控夹套', val: '双层水浴' }
+                    { label: '温控夹套', val: '双层循环水' },
+                    { label: '封闭等级', val: '全密闭正压' }
                 ],
                 chips: [
-                    '💪 专供健身减脂人群喜爱的 0 蔗糖发酵乳',
-                    '🍑 精准控制果味爆珠酸奶基底黏度与酸甜度',
-                    '🧼 配备自动旋风 CIP 清洗喷淋球'
+                    '🌿 专供老北京 0 蔗糖酸奶与“致·简”清洁配方系列',
+                    '🔥 双层夹套热水温和预热至菌种最佳活化温度',
+                    '🔒 无菌呼吸器过滤空气，杜绝外界微尘接触'
                 ]
             },
             cream: {
                 badge: '🟡 乳脂分离精华罐',
-                status: '● 低温柔和护脂',
+                status: '● 低温醇厚锁香中',
                 icon: '🧈',
                 title: '稀奶油罐',
-                sub: '天然生牛乳稀奶油浓缩暂存',
+                sub: '双皮酪与干酪酸奶的醇香灵魂',
                 metrics: [
-                    { label: '乳脂来源', val: '100%生牛乳' },
-                    { label: '应用品类', val: '双皮酪/干酪' }
+                    { label: '乳脂来源', val: '纯生牛乳离心' },
+                    { label: '应用明星品', val: '双皮酪/干酪' }
                 ],
                 chips: [
-                    '🍮 为双皮酪与干酪酸奶提供醇厚天然奶皮脂香',
-                    '❄️ 夹套冰水循环锁鲜，防止乳脂氧化',
-                    '✨ 无任何植脂末或反式脂肪酸添加'
+                    '✨ 物理离心提取天然新鲜乳脂，0 植脂末添加',
+                    '🍮 赋予禾田双皮酪双层厚奶皮与云朵般绵密口感',
+                    '❄️ 夹套冰水持续保鲜，锁住天然浓郁奶香'
                 ]
             },
             balance: {
-                badge: '🔵 流体稳压枢纽',
-                status: '● 液位自动闭环',
+                badge: '🔵 稳压稳流缓冲罐',
+                status: '● 液位自动闭环调节',
                 icon: '⚖️',
                 title: '平衡罐',
-                sub: '稳定管路压力与连续供料流量',
+                sub: '连续巴氏杀菌线稳压心脏',
                 metrics: [
-                    { label: '液位传感', val: '浮球+雷达' },
-                    { label: '气泡消除', val: '负压脱气' }
+                    { label: '液位控制', val: '浮球自动调节' },
+                    { label: '气泡消除', val: '100% 脱气' }
                 ],
                 chips: [
-                    '🌊 缓冲上下游流量波动，保证均质机稳定进料',
-                    '🫧 有效排出牛乳中混入的微量空气泡',
-                    '🔒 全食品级 316L 不锈钢镜面抛光内壁'
+                    '🌊 消除管路压力波动，保证进入均质机的流量恒定',
+                    '💨 排出生牛乳中的微量空气，防止加热管壁结垢',
+                    '🔄 温度未达标乳液自动回流至平衡罐重新杀菌'
                 ]
             },
             ferment: {
-                badge: '🟢 益生菌发酵矩阵',
-                status: '● 恒温 42°C 慢发酵',
-                icon: '🦠',
+                badge: '🟣 益生菌发酵罐矩阵',
+                status: '● 42°C 恒温慢发酵中',
+                icon: '🧫',
                 title: '不锈钢发酵罐阵',
-                sub: '多联排大型益生菌恒温发酵舱',
+                sub: '进口益生菌群恒温唤醒醇厚酸香',
                 metrics: [
-                    { label: '发酵温度', val: '42.0°C' },
-                    { label: '酸度监测', val: '在线pH计' }
+                    { label: '发酵温度', val: '41~43°C' },
+                    { label: '酸度终点', val: 'pH 4.5 急冷' }
                 ],
                 chips: [
-                    '🧬 精选优质乳酸菌种恒温慢发酵数小时',
-                    '🥄 凝固型老酸奶先灌装后静置，倒罐不洒',
-                    '🥤 搅拌型酸奶罐内凝乳后温柔打碎丝滑'
+                    '🧬 接入精选保加利亚乳杆菌与嗜热链球菌',
+                    '⏱️ 慢速恒温发酵分解部分乳糖，产生自然酸甜风味',
+                    '❄️ 达到黄金酸度后瞬间冰水降温锁住益生菌活力'
                 ]
             },
             pipes: {
-                badge: '⚡ 无菌流体动脉',
-                status: '● 镜面不锈钢管束',
-                icon: '🔄',
+                badge: '⚡ 无缝卫生级管廊',
+                status: '● 轨道自动氩弧焊管路',
+                icon: '🔧',
                 title: '浓缩管道 & 回程泵',
-                sub: '车间全封闭不锈钢管网与 CIP 回流',
+                sub: '全封闭镜像内壁抛光不锈钢管网',
                 metrics: [
-                    { label: '管道材质', val: '316L不锈钢' },
+                    { label: '内壁光洁度', val: 'Ra ≤ 0.4μm' },
                     { label: '清洗模式', val: '酸碱热水CIP' }
                 ],
                 chips: [
-                    '🚀 牛奶全程在密闭镜面不锈钢管道中高速穿梭',
-                    '🧼 回程泵驱动酸碱热水闭环冲刷每一寸管壁',
-                    '👁️ 实现“车间也有艺术家”般的工业美学排布'
+                    '✨ 管内壁镜面级电解抛光，彻底杜绝奶垢残留死角',
+                    '🚀 卫生级回程泵驱动 85°C 热水与酸碱液高速冲刷',
+                    '🔗 连接 120T 原奶罐、杀菌机组与 10 万级灌装线'
                 ]
             }
         };
 
-        function selectTank(key) {
-            const t = TANKS_DATA[key] || TANKS_DATA.holding;
-            document.querySelectorAll('[id^="tank-node-"]').forEach(node => {
-                node.classList.toggle('active-tank', node.id === `tank-node-${key}`);
+        function selectTank(tankId) {
+            const data = TANK_DATA[tankId];
+            if (!data) return;
+
+            document.querySelectorAll('[id^="tank-node-"]').forEach(el => {
+                el.classList.toggle('active-tank', el.id === `tank-node-${tankId}`);
             });
 
-            document.getElementById('tank-badge').textContent = t.badge;
-            document.getElementById('tank-status').textContent = t.status;
-            document.getElementById('tank-icon').textContent = t.icon;
-            document.getElementById('tank-title').textContent = t.title;
-            document.getElementById('tank-sub').textContent = t.sub;
+            const badge = document.getElementById('tank-badge');
+            const status = document.getElementById('tank-status');
+            const icon = document.getElementById('tank-icon');
+            const title = document.getElementById('tank-title');
+            const sub = document.getElementById('tank-sub');
+            const metrics = document.getElementById('tank-metrics');
+            const chips = document.getElementById('tank-chips');
 
-            document.getElementById('tank-metrics').innerHTML = t.metrics.map(m => `
-                <div class="bg-cream p-2 rounded-xl border border-ink">
-                    <strong class="font-display text-base text-hetianBlue block">${m.val}</strong>
-                    <span class="text-[10px] font-bold text-inkLight">${m.label}</span>
-                </div>
-            `).join('');
+            if (badge) badge.textContent = data.badge;
+            if (status) status.textContent = data.status;
+            if (icon) icon.textContent = data.icon;
+            if (title) title.textContent = data.title;
+            if (sub) sub.textContent = data.sub;
 
-            document.getElementById('tank-chips').innerHTML = t.chips.map(c => `
-                <div class="text-xs font-bold text-ink bg-oat/70 px-2.5 py-1.5 rounded-lg border border-ink/20">
-                    ${c}
-                </div>
-            `).join('');
-
+            if (metrics) {
+                metrics.innerHTML = data.metrics.map(m => `
+                    <div class="bg-cream p-2.5 rounded-xl border-2 border-ink">
+                        <strong class="font-display text-base text-hetianBlue block">${m.val}</strong>
+                        <span class="text-[10px] font-bold text-inkLight">${m.label}</span>
+                    </div>
+                `).join('');
+            }
+            if (chips) {
+                chips.innerHTML = data.chips.map(c => `
+                    <div class="text-xs font-bold text-ink bg-oat/75 px-2.5 py-1.5 rounded-xl border border-ink/25">${c}</div>
+                `).join('');
+            }
             playTone(650, 'sine');
         }
 
         function toggleYogurtCompare(type) {
-            const box = document.getElementById('yogurt-compare-box');
             const btnSet = document.getElementById('btn-yog-set');
             const btnStir = document.getElementById('btn-yog-stir');
-            if (!box) return;
-
+            const box = document.getElementById('yogurt-compare-box');
             const isSet = type === 'set';
+
             if (btnSet && btnStir) {
-                btnSet.classList.toggle('bg-hetianBlue', isSet);
-                btnSet.classList.toggle('text-milkWhite', isSet);
-                btnSet.classList.toggle('bg-cream', !isSet);
-                btnSet.classList.toggle('text-ink', !isSet);
-
-                btnStir.classList.toggle('bg-hetianBlue', !isSet);
-                btnStir.classList.toggle('text-milkWhite', !isSet);
-                btnStir.classList.toggle('bg-cream', isSet);
-                btnStir.classList.toggle('text-ink', isSet);
+                btnSet.className = isSet
+                    ? 'px-2 py-0.5 bg-hetianBlue text-milkWhite text-[10px] font-bold sketch-btn'
+                    : 'px-2 py-0.5 bg-cream text-ink text-[10px] font-bold sketch-btn';
+                btnStir.className = !isSet
+                    ? 'px-2 py-0.5 bg-hetianBlue text-milkWhite text-[10px] font-bold sketch-btn'
+                    : 'px-2 py-0.5 bg-cream text-ink text-[10px] font-bold sketch-btn';
             }
-
-            if (isSet) {
-                box.innerHTML = '🥄 <strong>凝固型老酸奶</strong>：加菌种后直接灌装进小罐慢速恒温发酵，凝酪如豆腐脑般倒罐不洒，冷冻后秒变酸奶冰淇淋！';
-            } else {
-                box.innerHTML = '🥤 <strong>搅拌型酸奶</strong>：在大型不锈钢发酵罐中整体发酵凝固后再温柔搅拌打碎，融合果酱与Q弹爆珠，口感丝滑醇厚！';
+            if (box) {
+                box.innerHTML = isSet
+                    ? '🥄 <strong>凝固型老酸奶</strong>：先加菌种灌装入罐 ➔ 恒温静置发酵 ➔ 倒罐不洒，冷冻后秒变冰淇淋！'
+                    : '🥤 <strong>搅拌型酸奶</strong>：先在大型发酵罐凝固 ➔ 机械轻柔打碎混入爆珠果粒 ➔ 丝滑可吸饮！';
             }
-            playTone(610, 'triangle');
+            playTone(600, 'triangle');
         }
 
         /********************************************************************
-         * 5. MODULE 04: ANIME GIFTBOX SWITCHER & A2 GENE MOLECULAR DECODER
+         * 5. MODULE 04: GIFT BOX SWITCHER, A2 GENE DECODER & MASCOT GUIDE
          ********************************************************************/
-        let isRedGiftBox = false;
+        let giftBoxVariant = 'blue';
 
-        function renderGiftBoxVariant() {
+        function renderGiftBox() {
             const holder = document.getElementById('giftbox-svg-holder');
-            const titleEl = document.getElementById('giftbox-title');
+            const title = document.getElementById('giftbox-title');
             if (!holder) return;
 
-            if (!isRedGiftBox) {
-                if (titleEl) titleEl.textContent = '海边的牧场 · A2纯牛奶礼盒';
+            if (giftBoxVariant === 'blue') {
+                if (title) title.textContent = '海边的牧场 · A2纯牛奶礼盒';
                 holder.innerHTML = `
-                    <svg viewBox="0 0 180 140" class="w-40 h-36 group-hover:scale-105 transition-transform">
-                        <path d="M 72 22 Q 90 8 108 22" fill="none" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round"/>
-                        <rect x="26" y="22" width="128" height="104" rx="10" fill="#1E3A8A" stroke="#362B24" stroke-width="2.4"/>
-                        <rect x="34" y="30" width="112" height="52" rx="6" fill="#38BDF8"/>
-                        <path d="M 34 66 Q 75 56 146 68 L 146 82 L 34 82 Z" fill="#4A7C59"/>
-                        <text x="90" y="52" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">海边的牧场</text>
-                        <text x="90" y="102" font-size="13" font-weight="900" fill="#F2B138" text-anchor="middle">A2β-酪蛋白纯牛奶</text>
-                        <text x="90" y="117" font-size="8.5" font-weight="bold" fill="#BFDBFE" text-anchor="middle">北纬40° · 秦皇岛自有牧场</text>
+                    <svg viewBox="0 0 180 145" class="w-40 h-32 group-hover:scale-105 transition-transform">
+                        <path d="M 74 24 Q 90 10 106 24" fill="none" stroke="#2E77AE" stroke-width="4" stroke-linecap="round"/>
+                        <rect x="26" y="24" width="128" height="106" rx="10" fill="#1E3A8A" stroke="#362B24" stroke-width="2.4"/>
+                        <rect x="34" y="32" width="112" height="46" rx="6" fill="#7DD3FC"/>
+                        <path d="M 34 62 Q 70 50 110 60 T 146 58 L 146 78 L 34 78 Z" fill="#4A7C59"/>
+                        <text x="90" y="96" font-size="11" font-weight="900" fill="#FDE68A" text-anchor="middle">海边的牧场</text>
+                        <text x="90" y="113" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">A2β-酪蛋白纯牛奶</text>
                     </svg>
                 `;
             } else {
-                if (titleEl) titleEl.textContent = '年年安澜 · A2纯牛奶新春礼盒';
+                if (title) title.textContent = '年年安澜 · 新春限定A2礼盒';
                 holder.innerHTML = `
-                    <svg viewBox="0 0 180 140" class="w-40 h-36 group-hover:scale-105 transition-transform">
-                        <path d="M 72 22 Q 90 8 108 22" fill="none" stroke="#DC2626" stroke-width="4" stroke-linecap="round"/>
-                        <rect x="26" y="22" width="128" height="104" rx="10" fill="#DC2626" stroke="#362B24" stroke-width="2.4"/>
-                        <path d="M 28 84 Q 90 66 152 84 L 152 124 L 28 124 Z" fill="#B91C1C"/>
-                        <text x="90" y="46" font-size="12" font-weight="900" fill="#FDE68A" text-anchor="middle">A2β-酪蛋白纯牛奶</text>
-                        <rect x="44" y="56" width="92" height="24" rx="12" fill="#FDE68A" stroke="#362B24" stroke-width="1.6"/>
-                        <text x="90" y="72" font-size="11" font-weight="900" fill="#B91C1C" text-anchor="middle">🏮 年年安澜 🏮</text>
-                        <text x="90" y="106" font-size="9.5" font-weight="bold" fill="#FEF3C7" text-anchor="middle">4.0g/100ml 原生乳蛋白</text>
+                    <svg viewBox="0 0 180 145" class="w-40 h-32 group-hover:scale-105 transition-transform">
+                        <path d="M 74 24 Q 90 10 106 24" fill="none" stroke="#D9483B" stroke-width="4" stroke-linecap="round"/>
+                        <rect x="26" y="24" width="128" height="106" rx="10" fill="#C83E31" stroke="#362B24" stroke-width="2.4"/>
+                        <path d="M 28 96 Q 66 82 104 94 T 152 88" fill="none" stroke="#F2B138" stroke-width="2.5"/>
+                        <circle cx="90" cy="84" r="18" fill="#FDFBF4" stroke="#F2B138" stroke-width="2"/>
+                        <text x="90" y="48" font-size="11" font-weight="900" fill="#FDE68A" text-anchor="middle">A2β-酪蛋白纯牛奶</text>
+                        <text x="52" y="72" font-size="9" font-weight="bold" fill="#FDE68A" text-anchor="middle">年年安澜</text>
+                        <text x="128" y="72" font-size="9" font-weight="bold" fill="#FDE68A" text-anchor="middle">岁岁清宁</text>
                     </svg>
                 `;
             }
         }
 
         function toggleGiftBoxVariant() {
-            isRedGiftBox = !isRedGiftBox;
-            renderGiftBoxVariant();
-            playTone(690, 'triangle');
+            giftBoxVariant = giftBoxVariant === 'blue' ? 'red' : 'blue';
+            renderGiftBox();
+            playTone(680, 'triangle');
         }
 
         function switchGeneType(type) {
-            const box = document.getElementById('gene-visual-box');
             const btnA2 = document.getElementById('btn-gene-a2');
             const btnA1 = document.getElementById('btn-gene-a1');
-            if (!box) return;
-
+            const box = document.getElementById('gene-visual-box');
             const isA2 = type === 'A2';
+
             if (btnA2 && btnA1) {
-                btnA2.classList.toggle('bg-pasture', isA2);
-                btnA2.classList.toggle('text-milkWhite', isA2);
-                btnA2.classList.toggle('bg-oat', !isA2);
-                btnA2.classList.toggle('text-ink', !isA2);
-
-                btnA1.classList.toggle('bg-hetianBlue', !isA2);
-                btnA1.classList.toggle('text-milkWhite', !isA2);
-                btnA1.classList.toggle('bg-oat', isA2);
-                btnA1.classList.toggle('text-ink', isA2);
+                btnA2.className = isA2
+                    ? 'px-3 py-1 bg-pasture text-milkWhite font-bold text-xs sketch-btn'
+                    : 'px-3 py-1 bg-oat text-ink font-bold text-xs sketch-btn';
+                btnA1.className = !isA2
+                    ? 'px-3 py-1 bg-hetianBlue text-milkWhite font-bold text-xs sketch-btn'
+                    : 'px-3 py-1 bg-oat text-ink font-bold text-xs sketch-btn';
             }
 
-            if (isA2) {
-                box.innerHTML = `
-                    <svg viewBox="0 0 420 110" class="w-full h-24 bg-cream rounded-xl border border-ink">
-                        <line x1="40" y1="55" x2="380" y2="55" stroke="#4A7C59" stroke-width="5" stroke-linecap="round"/>
-                        <circle cx="95" cy="55" r="14" fill="#A5D296" stroke="#362B24" stroke-width="2"/>
-                        <text x="95" y="59" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">66位</text>
-                        <circle cx="210" cy="55" r="22" fill="#F2B138" stroke="#362B24" stroke-width="2.4"/>
-                        <text x="210" y="52" font-size="9.5" font-weight="900" fill="#362B24" text-anchor="middle">67位</text>
-                        <text x="210" y="64" font-size="8.5" font-weight="bold" fill="#362B24" text-anchor="middle">脯氨酸</text>
-                        <circle cx="325" cy="55" r="14" fill="#A5D296" stroke="#362B24" stroke-width="2"/>
-                        <text x="325" y="59" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">68位</text>
-                        <text x="210" y="20" font-size="11" font-weight="900" fill="#4A7C59" text-anchor="middle">🔒 肽键紧密连接 · 消化酶不切割出 BCM-7</text>
-                        <text x="210" y="98" font-size="10" font-weight="bold" fill="#2E77AE" text-anchor="middle">✨ 蛋白结构天然亲和人体，肚肚温和更舒畅</text>
-                    </svg>
-                    <p class="text-xs text-ink font-bold leading-relaxed">
-                        ✅ <strong>1·2号泌乳舍纯种 A2 奶牛</strong>：β-酪蛋白第 67 位为<strong>脯氨酸（Proline）</strong>，消化过程中不会产生引起肠胃不适的 BCM-7 活性肽，非常适合乳糖/乳蛋白敏感人群！
-                    </p>
-                `;
-            } else {
-                box.innerHTML = `
-                    <svg viewBox="0 0 420 110" class="w-full h-24 bg-cream rounded-xl border border-ink">
-                        <line x1="40" y1="55" x2="185" y2="55" stroke="#2E77AE" stroke-width="5" stroke-linecap="round"/>
-                        <line x1="235" y1="55" x2="380" y2="55" stroke="#2E77AE" stroke-width="5" stroke-linecap="round"/>
-                        <circle cx="95" cy="55" r="14" fill="#D5EBF7" stroke="#362B24" stroke-width="2"/>
-                        <text x="95" y="59" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">66位</text>
-                        <circle cx="210" cy="55" r="22" fill="#E57A6B" stroke="#362B24" stroke-width="2.4"/>
-                        <text x="210" y="52" font-size="9.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">67位</text>
-                        <text x="210" y="64" font-size="8.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">组氨酸</text>
-                        <circle cx="325" cy="55" r="14" fill="#D5EBF7" stroke="#362B24" stroke-width="2"/>
-                        <text x="325" y="59" font-size="9" font-weight="bold" fill="#362B24" text-anchor="middle">68位</text>
-                        <text x="210" y="20" font-size="11" font-weight="900" fill="#E57A6B" text-anchor="middle">✂️ 消化酶易在此处切出 7 个氨基酸片段（BCM-7）</text>
-                        <text x="210" y="98" font-size="10" font-weight="bold" fill="#4A7C59" text-anchor="middle">🍯 禾田将 3·4·5号舍 A1 奶牛原奶专用于发酵醇厚酸奶！</text>
-                    </svg>
-                    <p class="text-xs text-ink font-bold leading-relaxed">
-                        🥛 <strong>科学分群、物尽其用</strong>：普通 A1 牛奶第 67 位为<strong>组氨酸（Histidine）</strong>，经益生菌深度发酵制成老酸奶后风味格外醇厚，禾田实现 A2 鲜饮与 A1 发酵的科学分流！
-                    </p>
-                `;
+            if (box) {
+                if (isA2) {
+                    box.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-display text-base text-pastureDark">🧬 A2 β-酪蛋白（第67位：脯氨酸 Proline）</span>
+                            <span class="bg-sprout px-2 py-0.5 rounded border border-ink text-[10px] font-bold">1·2号泌乳舍专供</span>
+                        </div>
+                        <div class="bg-cream p-3 rounded-xl border border-ink flex items-center justify-around text-center">
+                            <div><span class="text-2xl block">🔗</span><span class="text-[11px] font-bold">67位脯氨酸紧锁</span></div>
+                            <span class="text-pastureDark font-black text-lg">➔</span>
+                            <div><span class="text-2xl block">🛡️</span><span class="text-[11px] font-bold text-pastureDark">0 生成 BCM-7</span></div>
+                            <span class="text-pastureDark font-black text-lg">➔</span>
+                            <div><span class="text-2xl block">😊</span><span class="text-[11px] font-bold text-hetianBlue">温和亲和肠胃</span></div>
+                        </div>
+                        <p class="text-xs text-ink leading-relaxed">
+                            禾田牧场对全群奶牛进行基因检测，将纯合 <strong>A2/A2 基因奶牛</strong>独立分群饲养于 1、2 号泌乳舍，消化过程中<strong>不会断裂产生 BCM-7</strong>，大幅改善部分人群饮奶后的肠胃不适！
+                        </p>
+                    `;
+                } else {
+                    box.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-display text-base text-hetianBlue">🥛 普通 A1 β-酪蛋白（第67位：组氨酸 Histidine）</span>
+                            <span class="bg-hetianSky px-2 py-0.5 rounded border border-ink text-[10px] font-bold">3·4·5号泌乳舍 · 发酵酸奶优源</span>
+                        </div>
+                        <div class="bg-cream p-3 rounded-xl border border-ink flex items-center justify-around text-center">
+                            <div><span class="text-2xl block">✂️</span><span class="text-[11px] font-bold">67位组氨酸易酶切</span></div>
+                            <span class="text-coral font-black text-lg">➔</span>
+                            <div><span class="text-2xl block">🧪</span><span class="text-[11px] font-bold text-coral">释放少量 BCM-7</span></div>
+                            <span class="text-hetianBlue font-black text-lg">➔</span>
+                            <div><span class="text-2xl block">🥄</span><span class="text-[11px] font-bold text-hetianBlue">最适合慢发酵酸奶</span></div>
+                        </div>
+                        <p class="text-xs text-ink leading-relaxed">
+                            3、4、5 号泌乳舍的优质 A1 奶源乳蛋白同样高达 <strong>3.3%~3.6%</strong>，在益生菌发酵酸奶过程中蛋白充分降解，转化为风味醇厚的老北京老酸奶与爆珠酸奶！
+                        </p>
+                    `;
+                }
             }
-            playTone(620, 'sine');
+            playTone(isA2 ? 660 : 580, 'sine');
         }
 
-        /********************************************************************
-         * 6. FLOATING MASCOT TOUR GUIDE TIPS
-         ********************************************************************/
         const MASCOT_TIPS = [
-            '嗨！欢迎来到秦皇岛禾田牧业！我怀里抱着的可是<strong>4.0g/100ml高蛋白 A2 巴氏鲜奶</strong>，配料表只有生牛乳哦！点击我或地图探索吧~',
-            '你知道吗？禾田牧场 6,200 头奶牛全部是工作人员赴澳大利亚逐头挑选、海运隔离检疫引入的纯正荷斯坦良牛！',
-            '奶牛每天吃的是“80元豪华营养餐”：澳洲燕麦草、美国苜蓿草 + 40%本地全株玉米青贮，由意大利 TMR 车均匀搅拌投喂！',
-            '瑞士利拉伐 80 位转盘挤奶大厅一轮只需 8~10 分钟，原奶挤出后 0 接触空气，经地下无菌管道直入隔壁加工车间！',
-            '牛粪固液分离后，固体烘干消毒当牛舍松软垫床，液体进黑膜沼气池发电 + 三级氧化塘变有机肥回供 300 亩基地，真正零污染！'
+            '嗨！欢迎来到秦皇岛禾田牧业！我怀里抱着的可是<strong>4.0g/100ml高蛋白 A2 巴氏鲜奶</strong>，配料表只有生牛乳哦！',
+            '你知道吗？禾田是<strong>秦皇岛唯一拥有地域保护资质</strong>的巴氏奶生产企业，坚持 100% 自有牧场奶源，绝不收购一滴外部散奶！',
+            '牧场里 6,200 头澳洲荷斯坦奶牛每天吃着 <strong>80 元豪华 TMR 营养餐</strong>（40%玉米青贮+美国苜蓿+澳洲燕麦草），喝的还是恒温燕山山泉水！',
+            '挤奶大厅里的<strong>瑞士利拉伐 80 位转盘</strong>转一圈只要 8~10 分钟，原奶不接触空气直接通过<strong>地下无菌暗管</strong>输进隔壁工厂！',
+            '黑膜沼气池 + 一二三级生态氧化塘把牛粪变成了清洁沼气、松软牛床垫料和 300 亩农田有机肥，真正实现零污染绿色循环！'
         ];
         let mascotTipIdx = 0;
 
         function nextMascotTip() {
-            const bubble = document.getElementById('mascot-bubble');
-            const textEl = document.getElementById('mascot-tip-text');
-            if (bubble) bubble.classList.remove('hidden');
             mascotTipIdx = (mascotTipIdx + 1) % MASCOT_TIPS.length;
-            if (textEl) textEl.innerHTML = MASCOT_TIPS[mascotTipIdx];
+            const bubble = document.getElementById('mascot-bubble');
+            const text = document.getElementById('mascot-tip-text');
+            if (bubble) bubble.classList.remove('hidden');
+            if (text) text.innerHTML = MASCOT_TIPS[mascotTipIdx];
             playTone(680, 'triangle');
         }
 
         function toggleMascotBubble() {
             const bubble = document.getElementById('mascot-bubble');
-            if (bubble) {
-                bubble.classList.toggle('hidden');
-                playTone(520, 'sine');
-            }
+            if (bubble) bubble.classList.toggle('hidden');
+            playTone(520, 'sine');
         }
 
-        /********************************************************************
-         * 7. INITIALIZE ALL EXHIBITION MODULES ON DOM READY
-         ********************************************************************/
+        // Expose all handlers explicitly on window
+        window.playTone = playTone;
+        window.toggleAudio = toggleAudio;
+        window.openWelcomeModal = openWelcomeModal;
+        window.closeWelcomeModal = closeWelcomeModal;
+        window.nextWelcomeLine = nextWelcomeLine;
+        window.jumpFromModal = jumpFromModal;
+        window.switchExhibitionView = switchExhibitionView;
+        window.setCameraPreset = setCameraPreset;
+        window.adjustCameraZoom = adjustCameraZoom;
+        window.switchMapDisplayMode = switchMapDisplayMode;
+        window.filterMapZone = filterMapZone;
+        window.select3DBuilding = select3DBuilding;
+        window.toggleRotaryPlay = toggleRotaryPlay;
+        window.setRotarySpeed = setRotarySpeed;
+        window.selectRotaryStep = selectRotaryStep;
+        window.setFactoryFlowMode = setFactoryFlowMode;
+        window.setSterilizeTemp = setSterilizeTemp;
+        window.selectTank = selectTank;
+        window.toggleYogurtCompare = toggleYogurtCompare;
+        window.toggleGiftBoxVariant = toggleGiftBoxVariant;
+        window.switchGeneType = switchGeneType;
+        window.nextMascotTip = nextMascotTip;
+        window.toggleMascotBubble = toggleMascotBubble;
+
         document.addEventListener('DOMContentLoaded', () => {
             build3DPastureScene();
             init3DViewportGestures();
             select3DBuilding('rotary_hall');
+            window.addEventListener('resize', updateCameraTransform);
 
             initRotaryCows();
             selectRotaryStep(0);
@@ -3648,7 +3612,7 @@
             selectTank('holding');
             toggleYogurtCompare('set');
 
-            renderGiftBoxVariant();
+            renderGiftBox();
             switchGeneType('A2');
         });
     </script>
